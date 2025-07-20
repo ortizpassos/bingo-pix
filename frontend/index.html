@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Validação de Cartelas - Usuário</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #222;
+      color: white;
+      text-align: center;
+    }
+    #toastContainer {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      z-index: 1055;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container mt-5">
+  <h1 class="mb-4">🎟️ Validação de Cartelas</h1>
+
+  <div id="contadorTempo" class="fs-4 mb-3">⏳ Tempo restante: <span id="tempoRestante">--:--</span></div>
+
+  <div id="validarCartelasSection">
+    <button class="btn btn-primary btn-lg" onclick="mostrarFormularioQtd()">Valide suas cartelas</button>
+  </div>
+
+  <div id="formQtdCartelas" style="display: none;">
+    <input type="number" id="qtdCartelas" class="form-control w-25 mx-auto mt-3" placeholder="Quantidade de cartelas (1-10)" min="1" max="10">
+    <button class="btn btn-success mt-3" onclick="gerarCamposCartelas()">Continuar</button>
+    <button class="btn btn-secondary mt-2" onclick="voltarInicio()">Voltar</button>
+  </div>
+
+  <div id="cartelasSection" style="display: none;"></div>
+
+  <div id="resumoSection" style="display: none;">
+    <h3 class="mt-4">📋 Resumo das Cartelas</h3>
+    <ul id="resumoLista" class="list-group list-group-flush w-50 mx-auto"></ul>
+    <p class="mt-3 fs-5">💰 Valor Total: <span id="valorTotal"></span></p>
+    <button class="btn btn-warning" onclick="gerarPagamentoPix()">💳 Gerar Pagamento Pix</button>
+    <button class="btn btn-secondary mt-2" onclick="voltarParaCartelas()">Voltar</button>
+  </div>
+
+  <div id="pagamentoSection" style="display: none;">
+    <h3 class="mt-4">📲 Pagamento Pix</h3>
+    <img id="qrCodePix" alt="QR Code Pix" width="250" />
+    <p id="codigoCopiaCola" class="mt-3 text-break"></p>
+    <p class="mt-2">Aguardando pagamento...</p>
+    <button class="btn btn-secondary" onclick="voltarParaResumo()">Voltar</button>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+
+<script>
+let cartelas = [];
+let configuracao = {};
+let fimRodada = null;
+let intervaloTempo = null;
+
+function mostrarToast(msg, cor = 'info') {
+  const container = document.getElementById("toastContainer");
+  const id = Date.now();
+  const toast = document.createElement("div");
+  toast.className = `toast align-items-center text-bg-${cor} border-0 show mb-2`;
+  toast.role = "alert";
+  toast.innerHTML = `
+    <div class="d-flex">
+      <div class="toast-body">${msg}</div>
+      <button type="button" class="btn-close btn-close-white me-2 m-auto" onclick="this.parentElement.parentElement.remove()"></button>
+    </div>`;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+function mostrarFormularioQtd() {
+  document.getElementById("validarCartelasSection").style.display = "none";
+  document.getElementById("formQtdCartelas").style.display = "block";
+}
+
+function voltarInicio() {
+  document.getElementById("formQtdCartelas").style.display = "none";
+  document.getElementById("validarCartelasSection").style.display = "block";
+}
+
+function gerarCamposCartelas() {
+  const qtd = parseInt(document.getElementById("qtdCartelas").value);
+  if (isNaN(qtd) || qtd < 1 || qtd > 10) {
+    mostrarToast("Escolha entre 1 e 10 cartelas.", "warning");
+    return;
+  }
+  const container = document.getElementById("cartelasSection");
+  container.innerHTML = "";
+  cartelas = [];
+
+  for (let i = 0; i < qtd; i++) {
+    const input = document.createElement("input");
+    input.placeholder = `Número da cartela ${i+1}`;
+    input.id = `cartela-${i}`;
+    input.className = "form-control w-25 mx-auto mt-2";
+    container.appendChild(input);
+  }
+  const btn = document.createElement("button");
+  btn.textContent = "Confirmar Cartelas";
+  btn.className = "btn btn-success mt-3";
+  btn.onclick = confirmarCartelas;
+  container.appendChild(btn);
+  const voltar = document.createElement("button");
+  voltar.textContent = "Voltar";
+  voltar.className = "btn btn-secondary mt-2 ms-2";
+  voltar.onclick = () => {
+    document.getElementById("cartelasSection").style.display = "none";
+    document.getElementById("formQtdCartelas").style.display = "block";
+  };
+  container.appendChild(voltar);
+  container.style.display = "block";
+  document.getElementById("formQtdCartelas").style.display = "none";
+}
+
+function confirmarCartelas() {
+  cartelas = [];
+  const qtd = parseInt(document.getElementById("qtdCartelas").value);
+  for (let i = 0; i < qtd; i++) {
+    const valor = document.getElementById(`cartela-${i}`).value.trim();
+    if (!valor) return mostrarToast(`Preencha a cartela ${i + 1}`, "warning");
+    cartelas.push(valor);
+  }
+  document.getElementById("cartelasSection").style.display = "none";
+  const resumo = document.getElementById("resumoLista");
+  resumo.innerHTML = "";
+  cartelas.forEach(c => {
+    const li = document.createElement("li");
+    li.textContent = c;
+    li.className = "list-group-item bg-dark text-white";
+    resumo.appendChild(li);
+  });
+  const total = configuracao.valorCartela * cartelas.length;
+  document.getElementById("valorTotal").textContent = `R$ ${total.toFixed(2)}`;
+  document.getElementById("resumoSection").style.display = "block";
+}
+
+function voltarParaCartelas() {
+  document.getElementById("resumoSection").style.display = "none";
+  document.getElementById("cartelasSection").style.display = "block";
+}
+
+function voltarParaResumo() {
+  document.getElementById("pagamentoSection").style.display = "none";
+  document.getElementById("resumoSection").style.display = "block";
+}
+
+async function gerarPagamentoPix() {
+  const valorTotal = configuracao.valorCartela * cartelas.length;
+  try {
+    const res = await fetch("http://localhost:3000/gerar-pix", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        valor: valorTotal,
+        descricao: `Validação de ${cartelas.length} cartelas`,
+        email: "usuario@email.com"
+      })
+    });
+    const json = await res.json();
+    if (json.status === "pending" && json.point_of_interaction) {
+      const b64 = json.point_of_interaction.transaction_data.qr_code_base64;
+      const copiaCola = json.point_of_interaction.transaction_data.qr_code;
+      document.getElementById("qrCodePix").src = `data:image/png;base64,${b64}`;
+      document.getElementById("codigoCopiaCola").textContent = `Pix Copia e Cola: ${copiaCola}`;
+      document.getElementById("resumoSection").style.display = "none";
+      document.getElementById("pagamentoSection").style.display = "block";
+    } else {
+      console.error("Resposta Pix:", json);
+      mostrarToast("Erro ao gerar Pix.", "danger");
+    }
+  } catch (e) {
+    console.error(e);
+    mostrarToast("Falha na requisição ao servidor.", "danger");
+  }
+}
+
+function atualizarTempo() {
+  const config = JSON.parse(localStorage.getItem("configCartela"));
+  if (!config || !config.fimRodada) return;
+  configuracao = config;
+  fimRodada = config.fimRodada;
+
+  intervaloTempo = setInterval(() => {
+    const agora = Date.now();
+    const restante = fimRodada - agora;
+    if (restante <= 0) {
+      document.getElementById("tempoRestante").textContent = "Encerrado";
+      clearInterval(intervaloTempo);
+      document.getElementById("validarCartelasSection").style.display = "none";
+      document.getElementById("formQtdCartelas").style.display = "none";
+      document.getElementById("cartelasSection").style.display = "none";
+      document.getElementById("resumoSection").style.display = "none";
+    } else {
+      const min = Math.floor(restante / 60000);
+      const sec = Math.floor((restante % 60000) / 1000);
+      document.getElementById("tempoRestante").textContent = `${min.toString().padStart(2,"0")}:${sec.toString().padStart(2,"0")}`;
+    }
+  }, 1000);
+}
+
+window.onload = atualizarTempo;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,0 +1,49 @@
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel Administrativo - Bingo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-dark text-white text-center">
+
+  <div class="container mt-5">
+    <h1 class="mb-4">🔐 Painel Administrativo</h1>
+
+    <!-- Login -->
+    <div id="loginSection">
+      <input type="password" id="senhaMaster" class="form-control w-25 mx-auto" placeholder="Senha do administrador">
+      <button class="btn btn-primary mt-3" onclick="loginAdmin()">Entrar</button>
+    </div>
+
+    <!-- Painel Principal -->
+    <div id="painelAdmin" style="display: none;">
+      <button id="btnIniciar" class="btn btn-success btn-lg mt-4" onclick="mostrarConfiguracoes()">▶️ Iniciar Bingo</button>
+
+      <div id="configuracoes" class="mt-4" style="display: none;">
+        <h4 class="mb-3">Configurações da Rodada</h4>
+        <input type="number" id="inputValorCartela" class="form-control w-25 mx-auto" placeholder="Valor da Cartela (R$)">
+        <input type="number" id="inputTempoCompra" class="form-control w-25 mx-auto mt-2" placeholder="Tempo de compra (min)">
+        <button class="btn btn-warning mt-3" onclick="iniciarRodada()">🟢 Iniciar Rodada</button>
+      </div>
+
+      <div id="dadosRodada" style="display: none;" class="mt-5">
+        <h5 class="mb-3">🔎 Consultar Cartela</h5>
+        <input type="text" id="consultaCartela" class="form-control w-25 mx-auto" placeholder="Número da cartela">
+        <button class="btn btn-info mt-2" onclick="consultarCartela()">Consultar</button>
+        <p id="resultadoConsulta" class="mt-2 fs-5"></p>
+
+        <h5 class="mt-4">📊 Cartelas Validadas: <span id="totalValidadas">0</span></h5>
+        <h5 class="mt-2">⏱️ Tempo restante: <span id="tempoRestante">--:--</span></h5>
+
+        <button class="btn btn-danger mt-4" onclick="confirmarReset()">🔄 Resetar Rodada</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="admin.js"></script>
+</body>
+</html>
