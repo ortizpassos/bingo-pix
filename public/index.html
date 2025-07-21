@@ -157,7 +157,7 @@ function voltarParaResumo() {
 async function gerarPagamentoPix() {
   const valorTotal = configuracao.valorCartela * cartelas.length;
   try {
-    const res = await fetch("http://localhost:3000/gerar-pix", {
+    const res = await fetch("https://bingo-pix-evyy.onrender.com/gerar-pix", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
